@@ -127,13 +127,6 @@ class MenuSerializer(serializers.ModelSerializer):
         validated_data['meta'] = serializer.save()
         return super().create(validated_data)
 
-    def save(self, **kwargs):
-        user_obj = self.context.get('request').user
-        if user_obj and user_obj.is_superuser:
-            return super().save(**kwargs)
-        else:
-            raise Exception("权限拒绝，非系统管理员")
-
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
