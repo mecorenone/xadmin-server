@@ -12,7 +12,7 @@ from celery.utils.log import get_task_logger
 from django.utils import timezone
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
-from system.models import OperationLog
+from system.models import OperationLog, Menu, UserInfo, UserRole
 
 logger = get_task_logger(__name__)
 
@@ -29,3 +29,9 @@ def auto_clean_black_token(clean_day=1):
     clean_time = timezone.now() - datetime.timedelta(days=clean_day)
     deleted, _rows_count = OutstandingToken.objects.filter(expires_at__lte=clean_time).delete()
     logger.info(f"clean {_rows_count} black token {deleted}")
+
+
+def auth_clean_demo_data():
+    Menu.objects.filter(pk__gt=30).delete()
+    UserInfo.objects.filter(pk__gt=2).delete()
+    UserRole.objects.filter(pk__gt=1).delete()

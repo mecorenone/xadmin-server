@@ -9,7 +9,8 @@ import logging
 
 from celery import shared_task
 
-from system.utils.ctasks import auto_clean_operation_log, auto_clean_expired_captcha, auto_clean_black_token
+from system.utils.ctasks import auto_clean_operation_log, auto_clean_expired_captcha, auto_clean_black_token, \
+    auth_clean_demo_data
 
 logger = logging.getLogger(__name__)
 
@@ -27,3 +28,8 @@ def auto_clean_expired_captcha_job():
 @shared_task
 def auto_clean_black_token_job():
     auto_clean_black_token(clean_day=7)
+
+
+@shared_task
+def auth_clean_demo_data_job():
+    auth_clean_demo_data()

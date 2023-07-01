@@ -62,7 +62,14 @@ class Menu(DbBaseModel):
 
     # method = models.CharField(choices=method_choices, default='GET', verbose_name="请求方式", max_length=10)
 
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if self.pk and self.pk <= 30:
+            raise Exception(f'默认{self._meta.verbose_name}禁止操作')
+        return super().save(force_insert, force_update, using, update_fields)
+
     def delete(self, using=None, keep_parents=False):
+        if self.pk and self.pk <= 30:
+            raise Exception(f'默认{self._meta.verbose_name}禁止操作')
         if self.meta:
             self.meta.delete(using, keep_parents)
         super().delete(using, keep_parents)
@@ -105,6 +112,16 @@ class UserRole(DbBaseModel):
         verbose_name_plural = "角色信息"
         ordering = ("-created_time",)
 
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if self.pk and self.pk <= 1:
+            raise Exception(f'默认{self._meta.verbose_name}禁止操作')
+        return super().save(force_insert, force_update, using, update_fields)
+
+    def delete(self, using=None, keep_parents=False):
+        if self.pk and self.pk <= 1:
+            raise Exception(f'默认{self._meta.verbose_name}禁止操作')
+        super().delete(using, keep_parents)
+
     def __str__(self):
         return f"{self.name}-{self.created_time}"
 
@@ -128,7 +145,14 @@ class UserInfo(AbstractUser):
         verbose_name_plural = "用户信息"
         ordering = ("-date_joined",)
 
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if self.pk and self.pk <= 2:
+            raise Exception(f'默认{self._meta.verbose_name}禁止操作')
+        return super().save(force_insert, force_update, using, update_fields)
+
     def delete(self, using=None, keep_parents=False):
+        if self.pk and self.pk <= 2:
+            raise Exception(f'默认{self._meta.verbose_name}禁止操作')
         if self.avatar:
             self.avatar.delete()  # 删除存储的头像文件
         super().delete(using, keep_parents)
