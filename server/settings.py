@@ -474,7 +474,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'auth_clean_demo_data_job': {
         'task': 'system.tasks.auth_clean_demo_data_job',
-        'schedule': crontab(hour='*', minute='1'),
+        'schedule': crontab(hour='1', minute='1'),
         'args': ()
     }
 }
