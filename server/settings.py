@@ -237,7 +237,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,  # 在登录的时候更新user表  last_login 字段
+    'UPDATE_LAST_LOGIN': False,  # 在登录的时候更新user表  last_login 字段
 
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
