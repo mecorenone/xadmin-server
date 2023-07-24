@@ -20,7 +20,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
         extra_kwargs = {'last_login': {'read_only': True}, 'date_joined': {'read_only': True},
                         'pk': {'read_only': True}, 'avatar': {'read_only': True}}
         # extra_kwargs = {'password': {'write_only': True}}
-        read_only_fields = list(set([x.name for x in models.UserInfo._meta.fields]) - set(fields))
+        read_only_fields = ['pk'] + list(set([x.name for x in models.UserInfo._meta.fields]) - set(fields))
 
     roles_info = serializers.SerializerMethodField(read_only=True)
 
