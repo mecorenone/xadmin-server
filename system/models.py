@@ -1,5 +1,6 @@
 import datetime
 import time
+import uuid
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -8,8 +9,10 @@ from django.utils import timezone
 IS_DEMO = True
 USER_PK = 9
 ROLE_PK = 1
-MENU_PK = 47
-META_PK = 51
+MENU_PK = 76
+META_PK = 80
+
+
 # Create your models here.
 class DbBaseModel(models.Model):
     created_time = models.DateTimeField(auto_now_add=True, verbose_name="添加时间")
@@ -143,8 +146,9 @@ class UserRole(DbBaseModel):
 def upload_directory_path(instance, filename):
     # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
     prefix = filename.split('.')[-1]
-    new_filename = str(time.time()).replace('.', '')
-    return time.strftime(f"{instance.pk}/%Y/%m/%d/%S/{new_filename}.{prefix}")
+    tmp_name = f"{filename}_{time.time()}"
+    new_filename = f"{uuid.uuid5(uuid.NAMESPACE_DNS, tmp_name).__str__().replace('-', '')}.{prefix}"
+    return time.strftime(f"{instance.__class__.__name__.lower()}/{instance.pk}/%Y/%m/%d/%S/{new_filename}")
 
 
 class UserInfo(AbstractUser):
@@ -200,3 +204,67 @@ class OperationLog(DbBaseModel):
         cls.objects.filter(created_time__lt=clean_time).delete()
 
     remove_expired = classmethod(remove_expired)
+
+
+class UploadFile(DbBaseModel):
+    owner = models.ForeignKey(to=UserInfo, related_query_name='file_query', verbose_name='所属人',
+                              on_delete=models.CASCADE)
+    filepath = models.FileField(verbose_name="文件存储", null=True, blank=True, upload_to=upload_directory_path)
+    filename = models.CharField(verbose_name="文件原始名称", max_length=150)
+    filesize = models.IntegerField(verbose_name="文件大小")
+    is_tmp = models.BooleanField(verbose_name="是否临时文件", default=True)
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        self.filename = self.filename[:120]
+        return super().save(force_insert, force_update, using, update_fields)
+
+    def delete(self, using=None, keep_parents=False):
+        if self.filepath:
+            self.filepath.delete()  # 删除存储的文件
+        return super().delete(using, keep_parents)
+
+    class Meta:
+        verbose_name = "上传的文件"
+        verbose_name_plural = "上传的文件"
+
+
+class NoticeMessage(DbBaseModel):
+    owner = models.ManyToManyField(to=UserInfo, through="NoticeUserRead", null=True, blank=True)
+    level_choices = (
+        ('', 'default'), ('success', 'success'), ('primary', 'primary'), ('warning', 'warning'),
+        ('danger', 'danger'))
+    level = models.CharField(verbose_name='消息级别', choices=level_choices, default='', max_length=20)
+    notice_type_choices = ((0, '系统通知'), (1, '消息通知'), (2, '系统公告'))
+    notice_type = models.SmallIntegerField(verbose_name="消息类型", choices=notice_type_choices, default=1)
+    title = models.CharField(verbose_name='消息标题', max_length=255)
+    message = models.TextField(verbose_name='具体信息内容', blank=True, null=True)
+    extra_json = models.JSONField(verbose_name="额外的json数据", blank=True, null=True)
+    file = models.ManyToManyField(to=UploadFile, verbose_name="上传的资源")
+    publish = models.BooleanField(verbose_name="是否发布", default=True)
+
+    class Meta:
+        verbose_name = "消息通知"
+        verbose_name_plural = "消息通知"
+        ordering = ('-created_time',)
+
+    def delete(self, using=None, keep_parents=False):
+        if self.file:
+            for file in self.file.all():
+                file.delete()
+        return super().delete(using, keep_parents)
+
+    def __str__(self):
+        return f"${self.title}-{self.created_time}-${self.get_notice_type_display()}"
+
+
+class NoticeUserRead(DbBaseModel):
+    owner = models.ForeignKey(to=UserInfo, on_delete=models.CASCADE)
+    notice = models.ForeignKey(NoticeMessage, on_delete=models.CASCADE)
+    unread = models.BooleanField(verbose_name='是否未读', default=True, blank=False, db_index=True)
+
+    class Meta:
+        ordering = ('-created_time',)
+        verbose_name = "用户已读消息"
+        verbose_name_plural = "用户已读消息"
+        index_together = ('owner', 'unread')
+        unique_together = ('owner', 'notice')

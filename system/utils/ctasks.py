@@ -13,7 +13,8 @@ from django.utils import timezone
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 
 from system.models import MENU_PK, USER_PK, ROLE_PK
-from system.models import OperationLog, Menu, UserInfo, UserRole
+from system.models import Menu, UserInfo, UserRole
+from system.models import OperationLog, UploadFile
 
 logger = get_task_logger(__name__)
 
@@ -36,3 +37,9 @@ def auth_clean_demo_data():
     Menu.objects.filter(pk__gt=MENU_PK).delete()
     UserInfo.objects.filter(pk__gt=USER_PK).delete()
     UserRole.objects.filter(pk__gt=ROLE_PK).delete()
+
+
+def auto_clean_tmp_file(clean_day=1):
+    clean_time = timezone.now() - datetime.timedelta(days=clean_day)
+    deleted, _rows_count = UploadFile.objects.filter(created_time__lte=clean_time).delete()
+    logger.info(f"clean {_rows_count} upload tmp file {deleted}")
