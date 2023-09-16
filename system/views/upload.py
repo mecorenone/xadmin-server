@@ -25,14 +25,6 @@ class UploadView(APIView):
         """
         # 获取多个file
         files = request.FILES.getlist('file', [])
-        user_obj = request.user
-        uid = request.query_params.get('uid')
-        if user_obj and uid:
-            user_obj = UserInfo.objects.filter(pk=uid).first()
-        if user_obj:
-            if user_obj.pk <= 2:
-                return ApiResponse(code=1004, detail='默认用户信息禁止操作')
-
         result = []
         for file_obj in files:
             try:

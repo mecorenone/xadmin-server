@@ -13,7 +13,7 @@ from rest_framework.filters import OrderingFilter
 
 from common.core.modelset import BaseModelSet
 from common.core.response import ApiResponse
-from system.models import UserInfo
+from system.models import UserInfo, USER_PK, IS_DEMO
 from system.utils import notify
 from system.utils.serializer import UserSerializer
 
@@ -69,6 +69,9 @@ class UserView(BaseModelSet):
         uid = request.data.get('uid')
         if uid:
             user_obj = UserInfo.objects.filter(pk=uid).first()
+            if IS_DEMO and user_obj.pk <= USER_PK:
+                return ApiResponse(code=1004, detail='默认用户信息禁止操作')
+
             if user_obj:
                 file_obj = files[0]
                 try:
