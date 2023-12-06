@@ -10,6 +10,7 @@ from rest_framework.decorators import action
 
 from common.core.modelset import OwnerModelSet, UploadFileAction
 from common.core.response import ApiResponse
+from system.models import IS_DEMO, USER_PK
 from system.utils.serializer import UserInfoSerializer
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,13 @@ class UserInfoView(OwnerModelSet, UploadFileAction):
 
     def get_object(self):
         return self.request.user
+
+    @action(methods=['post'], detail=True)
+    def upload(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if IS_DEMO and instance.pk <= USER_PK:
+            return ApiResponse(code=1004, detail='默认用户信息禁止操作')
+        return super().upload(request, *args, **kwargs)
 
     @action(methods=['post'], detail=False)
     def reset_password(self, request, *args, **kwargs):
