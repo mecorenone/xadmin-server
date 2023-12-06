@@ -10,7 +10,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 
 from common.core.response import ApiResponse
-from system.models import UploadFile, UserInfo
+from system.models import UploadFile
 from system.utils.serializer import UploadFileSerializer
 
 logger = logging.getLogger(__file__)
@@ -29,7 +29,7 @@ class UploadView(APIView):
         result = []
         for file_obj in files:
             try:
-                file_type = file_obj.name.split(".")[-1]
+                # file_type = file_obj.name.split(".")[-1]
                 # if file_type not in ['png', 'jpeg', 'jpg', 'gif']:
                 #     logger.error(f"user:{request.user} upload file type error file:{file_obj.name}")
                 #     raise

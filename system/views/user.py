@@ -6,13 +6,11 @@
 # date : 6/16/2023
 import logging
 
-from django.conf import settings
-from django.db.models import FileField
 from django_filters import rest_framework as filters
 from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 
-from common.core.modelset import BaseModelSet
+from common.core.modelset import BaseModelSet, UploadFileAction
 from common.core.response import ApiResponse
 from system.models import UserInfo, USER_PK, IS_DEMO
 from system.utils import notify
@@ -32,7 +30,8 @@ class UserFilter(filters.FilterSet):
         fields = ['email', 'is_active', 'sex', 'pk']
 
 
-class UserView(BaseModelSet):
+class UserView(BaseModelSet, UploadFileAction):
+    FILE_UPLOAD_FIELD = 'avatar'
     queryset = UserInfo.objects.all()
     serializer_class = UserSerializer
 
@@ -64,38 +63,13 @@ class UserView(BaseModelSet):
         self.queryset = self.queryset.filter(is_superuser=False)
         return super().many_delete(request, *args, **kwargs)
 
-    @action(methods=['post'], detail=False)
+    @action(methods=['post'], detail=True)
     def upload(self, request, *args, **kwargs):
-        files = request.FILES.getlist('file', [])
-        uid = request.data.get('uid')
-        if uid:
-            user_obj = UserInfo.objects.filter(pk=uid).first()
-            if IS_DEMO and user_obj.pk <= USER_PK:
-                return ApiResponse(code=1004, detail='默认用户信息禁止操作')
+        instance = self.get_object()
+        if IS_DEMO and instance.pk <= USER_PK:
+            return ApiResponse(code=1004, detail='默认用户信息禁止操作')
+        return super().upload(request, *args, **kwargs)
 
-            if user_obj:
-                file_obj = files[0]
-                try:
-                    file_type = file_obj.name.split(".")[-1]
-                    if file_type not in ['png', 'jpeg', 'jpg', 'gif']:
-                        logger.error(f"user:{request.user} upload file type error file:{file_obj.name}")
-                        raise
-                    if file_obj.size > settings.FILE_UPLOAD_SIZE:
-                        return ApiResponse(code=1003, detail=f"图片大小不能超过 {settings.FILE_UPLOAD_SIZE}")
-                except Exception as e:
-                    logger.error(f"user:{request.user} upload file type error Exception:{e}")
-                    return ApiResponse(code=1002, detail="错误的图片类型")
-                delete_avatar_name = None
-                if user_obj.avatar:
-                    delete_avatar_name = user_obj.avatar.name
-                user_obj.avatar = file_obj
-                user_obj.save(update_fields=['avatar'])
-                if delete_avatar_name:
-                    FileField(name=delete_avatar_name).storage.delete(delete_avatar_name)
-                return ApiResponse()
-        return ApiResponse(code=1004, detail="数据异常")
-
-    @action(methods=['post'], detail=False)
     def reset_password(self, request, *args, **kwargs):
         uid = request.data.get('uid')
         password = request.data.get('password')
